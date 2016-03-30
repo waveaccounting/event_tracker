@@ -2,6 +2,7 @@ require "event_tracker/version"
 require "event_tracker/mixpanel"
 require "event_tracker/kissmetrics"
 require "event_tracker/google_analytics"
+require "event_tracker/amplitude"
 
 module EventTracker
   module HelperMethods
@@ -56,12 +57,20 @@ module EventTracker
       end
     end
 
+    def amplitude_tracker
+      @amplitude_tracker ||= begin
+        amplitude_key = Rails.application.config.event_tracker.amplitude_key
+        EventTracker::Amplitude.new(amplitude_key) if amplitude_key
+      end
+    end
+
     def event_trackers
       @event_trackers ||= begin
         trackers = []
         trackers << mixpanel_tracker if mixpanel_tracker
         trackers << kissmetrics_tracker if kissmetrics_tracker
         trackers << google_analytics_tracker if google_analytics_tracker
+        trackers << amplitude_tracker if amplitude_tracker
         trackers
       end
     end
@@ -107,6 +116,14 @@ module EventTracker
 
       if identity = respond_to?(:kissmetrics_identity, true) && kissmetrics_identity
         a << kissmetrics_tracker.identify(identity)
+      end
+
+      if identity = respond_to?(:amplitude_identity, true) && amplitude_identity
+        a << amplitude_tracker.identify(identity)
+      end
+
+      if user_properties = respond_to?(:amplitude_user_properties, true) && amplitude_user_properties
+        a << amplitude_tracker.set_user_properties(user_properties)
       end
 
       registered_properties = session.delete(:registered_properties)
