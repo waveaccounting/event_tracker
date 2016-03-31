@@ -118,8 +118,8 @@ module EventTracker
         a << kissmetrics_tracker.identify(identity)
       end
 
-      if identity = respond_to?(:amplitude_identity, true) && amplitude_identity
-        a << amplitude_tracker.identify(identity)
+      if distinct_id = respond_to?(:amplitude_distinct_id, true) && amplitude_distinct_id
+        a << amplitude_tracker.identify(distinct_id)
       end
 
       if user_properties = respond_to?(:amplitude_user_properties, true) && amplitude_user_properties

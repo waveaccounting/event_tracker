@@ -5,27 +5,34 @@ shared_examples_for "init" do
   it { should include('mixpanel.init("YOUR_TOKEN")') }
   it { should include(%q{var _kmk = _kmk || 'KISSMETRICS_KEY'}) }
   it { should include(%q{ga('create', 'GOOGLE_ANALYTICS_KEY', 'auto', {'name': 'event_tracker'});}) }
+  it { should include('amplitude.init("AMPLITUDE_KEY")') }
 end
 
 shared_examples_for "without distinct id" do
   it { should_not include(%q{_kmq.push(['identify', 'name@email.com']);}) }
   it { should_not include('mixpanel.identify("distinct_id")') }
+  it { should_not include('amplitude.setUserId("distinct_id");') }
+  it { should_not include(%q{amplitude.setUserProperties({"prop":"value"});}) }
 end
 
 shared_examples_for "with distinct id" do
   it { should include(%q{_kmq.push(['identify', 'name@email.com']);}) }
   it { should include('mixpanel.identify("distinct_id")') }
+  it { should include('amplitude.setUserId("distinct_id");') }
+  it { should include(%q{amplitude.setUserProperties({"prop":"value"});}) }
 end
 
 shared_examples_for "without event" do
   it { should_not include('mixpanel.track("Register for site")') }
   it { should_not include(%q{ga('event_tracker.send', 'event', 'event_tracker', 'Register for site');}) }
+  it { should_not include('amplitude.logEvent("Register for site")') }
 end
 
 shared_examples_for "with event" do
   it { should include('mixpanel.track("Register for site")') }
   it { should include(%q{_kmq.push(['record', 'Register for site']);}) }
   it { should include(%q{ga('event_tracker.send', 'event', 'event_tracker', 'Register for site');}) }
+  it { should include('amplitude.logEvent("Register for site")') }
 end
 
 feature 'basic integration' do
@@ -105,6 +112,7 @@ feature 'basic integration' do
     it { should include %Q{mixpanel.register({"age":19,"gender":"female"})} }
     it { should include %Q{_kmq.push(['record', 'Take an action', {"property1":"a","property2":1}])} }
     it { should include %Q{_kmq.push(['set', {"age":19,"gender":"female"}])} }
+    it { should include %Q{amplitude.logEvent("Take an action", {"property1":"a","property2":1})} }
   end
 
   class IdentityController < ApplicationController
@@ -117,6 +125,14 @@ feature 'basic integration' do
       "name@email.com"
     end
 
+    def amplitude_distinct_id
+      "distinct_id"
+    end
+
+    def amplitude_user_properties
+      {prop: 'value'}
+    end
+
     def index
       render inline: "OK", layout: true
     end
@@ -124,6 +140,7 @@ feature 'basic integration' do
 
   context "with identity" do
     background { visit "/identity" }
+    it_should_behave_like "init"
     it_should_behave_like "with distinct id"
   end
 
@@ -149,6 +166,8 @@ feature 'basic integration' do
     private
     def mixpanel_distinct_id; "distinct_id"; end
     def kissmetrics_identity; "name@email.com"; end
+    def amplitude_distinct_id; "distinct_id"; end
+    def amplitude_user_properties; {prop: 'value'}; end
   end
 
   context "with private methods" do
