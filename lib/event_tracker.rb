@@ -151,7 +151,7 @@ module EventTracker
       ActiveSupport.on_load :action_controller do
         include ActionControllerExtension
         include HelperMethods
-        helper HelperMethods
+        ::ActionController::Base.send(:include, HelperMethods)
       end
     end
   end
